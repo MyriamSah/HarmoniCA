@@ -1,0 +1,36 @@
+import ast
+import json
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+
+COLORS=['#087f8c','#6366f1','#f59e0b','#ec4899','#14b8a6','#8b5cf6']
+
+def decorate(fig):
+    fig.update_layout(template='plotly_white',font=dict(family='Arial',color='#172b43'),paper_bgcolor='rgba(0,0,0,0)',margin=dict(l=20,r=20,t=35,b=25),colorway=COLORS)
+    return fig
+
+def flow_figure(df):
+    instruments=list(df.questionnaire.unique())
+    dimensions=list(df.dimension_label.unique())
+    grouped=df.groupby(['questionnaire','dimension_label']).size().reset_index(name='n')
+    return decorate(go.Figure(go.Sankey(node=dict(label=instruments+dimensions,pad=24,thickness=18,color=[COLORS[i%len(COLORS)] for i in range(len(instruments)+len(dimensions))]),link=dict(source=[instruments.index(q) for q in grouped.questionnaire],target=[len(instruments)+dimensions.index(d) for d in grouped.dimension_label],value=grouped.n,color='rgba(8,127,140,.22)'))))
+
+def coverage_figure(df,normalize=False):
+    counts=pd.crosstab(df.questionnaire,df.dimension_label)
+    values=counts.div(counts.sum(axis=1),axis=0)*100 if normalize else counts
+    return decorate(px.imshow(values,text_auto='.1f' if normalize else True,aspect='auto',color_continuous_scale='Teal',labels=dict(x='Dimension',y='Questionnaire',color='% of items' if normalize else 'Items')))
+
+def confidence_figure(df):
+    frame=df.copy();frame['confidence']=pd.to_numeric(frame.confidence,errors='coerce')
+    return decorate(px.histogram(frame,x='confidence',color='questionnaire',nbins=20,barmode='overlay',opacity=.65,range_x=[0,1],labels={'confidence':'Engine assignment confidence'}))
+
+def probabilities(value):
+    if not value or str(value)=='nan': return {}
+    try: data=json.loads(value)
+    except (ValueError,TypeError):
+        try:data=ast.literal_eval(value)
+        except (ValueError,SyntaxError):return {}
+    if not isinstance(data,dict):return {}
+    try:return {str(k):float(v) for k,v in data.items()}
+    except (ValueError,TypeError):return {}

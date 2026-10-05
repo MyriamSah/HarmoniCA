@@ -1,4 +1,4 @@
-# HarmoniCA visual research workspace — v3
+# HarmoniCA visual research workspace —
 
 An independent Streamlit frontend for julia-pfarr/HarmoniCA, inspected at commit b074bf07970959b4d5021e2cfbeff34a6b012385. This dashboard calls the actual upstream Python API. The source model strategy and dimension catalog are included with attribution; model weights are not bundled.
 
